@@ -6,13 +6,13 @@ Plan completo: [architecture/execution_plan.md](architecture/execution_plan.md)
 
 ## Fase 1 — Scaffolding
 
-- [ ] `requirements.txt`
-- [ ] `app.py` (Flask, arranca en `$PORT`)
-- [ ] `docker-entrypoint.sh`
-- [ ] `Dockerfile.base`
-- [ ] `Dockerfile`
-- [ ] `.env.example`
-- [ ] Verificar `GET /health → 200`
+- [x] `requirements.txt`
+- [x] `app.py` (Flask, arranca en `$PORT`)
+- [x] `docker-entrypoint.sh`
+- [x] `Dockerfile.base`
+- [x] `Dockerfile`
+- [x] `.env.example`
+- [x] Verificar `GET /health → 200`
 
 ## Fase 2 — API + persistencia
 
