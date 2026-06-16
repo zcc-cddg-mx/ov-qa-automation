@@ -146,10 +146,10 @@ echo ""
 echo "=== 7. GET /tasks (últimas 10) ==="
 curl -sf "${BASE_URL}/tasks?limit=10" | python3 -m json.tool
 
-# ─── 8. Callback n8n ──────────────────────────────────────────────────────────
+# ─── 8. Callback n8n — sin OpenAI ────────────────────────────────────────────
 
 echo ""
-echo "=== 8. Callback n8n — captura multipart desde tests/tasks/1f87e04f.json ==="
+echo "=== 8. Callback n8n — multipart sin OpenAI (desde tests/tasks/1f87e04f.json) ==="
 
 CALLBACK_FILE=$(mktemp /tmp/qa_callback_XXXX.bin)
 
@@ -253,7 +253,112 @@ for part in parts[1:-1]:
         print(f"  {name}: {val[:120]}")
 PYEOF
 
-rm -f "${CALLBACK_FILE}" "${CALLBACK_FILE}.ct" /tmp/_qa_callback_server.py
+rm -f "${CALLBACK_FILE}" "${CALLBACK_FILE}.ct"
+
+# ─── 9. Callback n8n — con OpenAI mock ───────────────────────────────────────
+
+echo ""
+echo "=== 9. Callback n8n — multipart con OpenAI mock (executive_summary) ==="
+
+CALLBACK_FILE2=$(mktemp /tmp/qa_callback_XXXX.bin)
+
+python3 /tmp/_qa_callback_server.py "${CALLBACK_PORT}" "${CALLBACK_FILE2}" &
+CB_PID2=$!
+sleep 0.5
+echo "  callback listener PID=${CB_PID2} en localhost:${CALLBACK_PORT}"
+
+python3 - << PYEOF
+import json, sys, os
+from unittest.mock import patch, MagicMock
+sys.path.insert(0, '${SCRIPT_DIR}')
+
+# cargar .env (sin OPENAI_API_KEY para que el mock tome control)
+env_file = '${SCRIPT_DIR}/.env'
+if os.path.exists(env_file):
+    for line in open(env_file):
+        line = line.strip()
+        if line and not line.startswith('#') and '=' in line:
+            k, _, v = line.partition('=')
+            os.environ.setdefault(k.strip(), v.strip())
+
+os.environ['OPENAI_API_KEY'] = 'sk-mock-test'
+
+MOCK_SUMMARY = (
+    "El despliegue del batch de renovaciones para julio 2026 fue aprobado exitosamente. "
+    "Se validaron 10 pólizas de la muestra aleatoria, confirmando que el cálculo de prima "
+    "anual es consistente con los factores registrados en la base de datos. "
+    "Los checks de migración, salud del servicio y conteo de registros también pasaron sin inconvenientes. "
+    "El ambiente DEV/UAT se encuentra en condiciones óptimas para continuar con el proceso de despliegue."
+)
+
+mock_choice = MagicMock()
+mock_choice.message.content = MOCK_SUMMARY
+mock_resp = MagicMock()
+mock_resp.choices = [mock_choice]
+mock_client = MagicMock()
+mock_client.chat.completions.create.return_value = mock_resp
+
+import callback
+
+with open('${SCRIPT_DIR}/tests/tasks/1f87e04f.json') as f:
+    task = json.load(f)
+
+t = {
+    'task_id': task['task_id'], 'ticket': task['ticket'],
+    'command': task['command'], 'module': task['module'],
+    'migration_name': task.get('migration_name', ''),
+    'branch': '', 'aux_branch': '', 'commit_id': '',
+    'callback_url': 'http://localhost:${CALLBACK_PORT}/webhook/test',
+}
+
+with patch('checks.summary.OpenAI', return_value=mock_client):
+    callback.send(t, task['checks'], task['result'], task['summary'], task['updated_at'])
+PYEOF
+
+for i in $(seq 1 20); do sleep 0.5; [ -s "${CALLBACK_FILE2}" ] && break; done
+wait "${CB_PID2}" 2>/dev/null || true
+
+CT2=$(cat "${CALLBACK_FILE2}.ct" 2>/dev/null || echo "")
+echo ""
+echo "  Content-Type: ${CT2}"
+echo ""
+
+python3 - "${CALLBACK_FILE2}" "${CT2}" << 'PYEOF'
+import sys
+
+body = open(sys.argv[1], 'rb').read()
+ct = sys.argv[2] if len(sys.argv) > 2 else ""
+
+boundary = None
+for part in ct.split(";"):
+    part = part.strip()
+    if part.startswith("boundary="):
+        boundary = part[len("boundary="):].strip('"').encode()
+        break
+
+if not boundary:
+    print("  ERROR: no se recibió callback multipart"); sys.exit(1)
+
+parts = body.split(b"--" + boundary)
+print("  Campos recibidos:")
+for part in parts[1:-1]:
+    header, _, content = part.partition(b"\r\n\r\n")
+    content = content.rstrip(b"\r\n")
+    hdr = header.decode("utf-8", errors="replace")
+    if "filename" in hdr:
+        print(f"\n  --- checks_log.txt ---")
+        print(content.decode("utf-8", errors="replace"))
+        print("  ---")
+    else:
+        name = hdr.split('name="')[1].split('"')[0]
+        val = content.decode("utf-8", errors="replace")
+        if name == "executive_summary":
+            print(f"\n  executive_summary:\n  {val}\n")
+        else:
+            print(f"  {name}: {val[:120]}")
+PYEOF
+
+rm -f "${CALLBACK_FILE2}" "${CALLBACK_FILE2}.ct" /tmp/_qa_callback_server.py
 
 echo ""
 echo "=== FIN ==="
