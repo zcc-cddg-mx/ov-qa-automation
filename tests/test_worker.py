@@ -51,10 +51,13 @@ def test_worker_approved(tmp_db):
 
     with patch("worker.flyway.run", return_value=checks_ok[0]), \
          patch("worker.health.run", return_value=checks_ok[1]), \
-         patch("worker.renewal.run_row_count", return_value=checks_ok[2]), \
-         patch("worker.renewal.run_no_renovar_count", return_value=checks_ok[3]), \
+         patch("worker.renewal.run_row_count", return_value=checks_ok[2]) as mock_rc, \
+         patch("worker.renewal.run_no_renovar_count", return_value=checks_ok[3]) as mock_nr, \
          patch("callback.send"):
         worker._execute({**TASK})
+
+    mock_rc.assert_called_once_with(2026, 6, 100)
+    mock_nr.assert_called_once_with(2026, 6)
 
     row = db_module.get_task("w001")
     assert row["status"] == "done"
@@ -71,6 +74,7 @@ def test_worker_rejected_partial_failure(tmp_db):
          patch("worker.renewal.run_no_renovar_count", return_value=_failed_check("no_renovar_count")), \
          patch("callback.send"):
         worker._execute({**TASK})
+
 
     row = db_module.get_task("w001")
     assert row["result"] == "rejected"
@@ -93,6 +97,7 @@ def test_worker_all_checks_run_before_resolving(tmp_db):
          patch("worker.renewal.run_no_renovar_count", side_effect=track("no_renovar_count")), \
          patch("callback.send"):
         worker._execute({**TASK})
+
 
     assert ran == ["flyway_history", "endpoint_health", "row_count", "no_renovar_count"]
 

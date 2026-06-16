@@ -31,8 +31,8 @@ dependencies:
       # HTTP checks against deployed services (endpoint_health)
       - requests==2.32.3
 
-      # PostgreSQL driver — SQL checks against DEV database
-      - psycopg2-binary==2.9.10
+      # Oracle driver — SQL checks against DEV database (thin mode, no Oracle Client needed)
+      - oracledb>=2.0
 
       # Testing
       - pytest==9.0.3

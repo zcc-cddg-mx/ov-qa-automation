@@ -74,11 +74,11 @@ def _execute(task):
 
         # checks específicos por command
         if command == "ren-data":
-            result = renewal.run_row_count(migration_name, task.get("row_count"))
+            result = renewal.run_row_count(task["year"], task["month"], task.get("row_count"))
             check_results.append(result)
             print(f"[CHECK]  row_count — {result['status']} ({result['detail']})")
 
-            result = renewal.run_no_renovar_count(migration_name)
+            result = renewal.run_no_renovar_count(task["year"], task["month"])
             check_results.append(result)
             print(f"[CHECK]  no_renovar_count — {result['status']} ({result['detail']})")
 

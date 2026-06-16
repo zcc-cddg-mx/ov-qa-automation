@@ -1,20 +1,23 @@
 import os
-import psycopg2
+from checks.db_conn import rule_conn
 
 
 def run_entity_rows(entity: str, migration_name: str) -> dict:
+    schema = os.environ["RULES_SCHEMA"]
     table = os.environ["RULES_TABLE"]
     entity_field = os.environ["RULES_ENTITY_FIELD"]
     id_field = os.environ["RULES_MIGRATION_ID_FIELD"]
-    dsn = os.environ["DB_DSN"]
+    qualified = f"{schema}.{table}"
 
     try:
-        with psycopg2.connect(dsn) as conn, conn.cursor() as cur:
-            cur.execute(
-                f"SELECT COUNT(*) FROM {table} WHERE {entity_field} = %s AND {id_field} = %s",
-                (entity, migration_name),
-            )
-            count = cur.fetchone()[0]
+        with rule_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"SELECT COUNT(*) FROM {qualified} "
+                    f"WHERE {entity_field} = :1 AND {id_field} = :2",
+                    (entity, migration_name),
+                )
+                count = cur.fetchone()[0]
 
         if count > 0:
             return {"name": "entity_rows", "status": "ok",

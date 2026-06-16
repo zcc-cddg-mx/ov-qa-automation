@@ -60,11 +60,20 @@ All table and field names are injected via env vars — the code has no hardcode
 
 | Variable | Default | Description |
 |---|---|---|
-| `AMS_POLICY_HOST` | — | `host:port` for ams-policy DEV |
-| `AMS_RULE_HOST` | — | `host:port` for ams-rule DEV |
-| `HEALTH_PATH` | `/actuator/health` | Health endpoint path |
-| `DB_DSN` | — | `postgresql://user:pass@host:5432/db` |
+| `AMS_POLICY_HOST` | — | Base URL for ams-policy DEV (e.g. `https://host/portal`) |
+| `AMS_RULE_HOST` | — | Base URL for ams-rule DEV |
+| `HEALTH_PATH` | `/actuator/health` | Health endpoint path (appended to host) |
+| `DB_DSN` | — | `jdbc:oracle:thin:@host:1521:sid` |
 | `N8N_CALLBACK_URL` | — | Fallback webhook URL for n8n |
+
+**Auth (JWT — required for health check)**
+
+| Variable | Default | Description |
+|---|---|---|
+| `AUTH_LOGIN_URL` | — | Full URL for login endpoint (returns `{"token": "..."}`) |
+| `AUTH_USERNAME` | — | Service account username |
+| `AUTH_PASSWORD` | — | Service account password |
+| `AUTH_TENANT` | `ec` | Value for `x-tenantid-1` header |
 
 **DB schema — `ren-data`**
 

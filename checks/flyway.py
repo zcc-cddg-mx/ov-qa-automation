@@ -1,24 +1,26 @@
 import os
-import psycopg2
+from checks.db_conn import policy_conn
 
 
 def run(migration_name: str) -> dict:
+    schema = os.environ["RENEWAL_SCHEMA"]
     table = os.environ["FLYWAY_HISTORY_TABLE"]
-    dsn = os.environ["DB_DSN"]
+    qualified = f'{schema}."{table}"'
 
     try:
-        with psycopg2.connect(dsn) as conn, conn.cursor() as cur:
-            cur.execute(
-                f"SELECT COUNT(*) FROM {table} WHERE script LIKE %s AND success = TRUE",
-                (f"%{migration_name}%",),
-            )
-            count = cur.fetchone()[0]
+        with policy_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    f'SELECT COUNT(*) FROM {qualified} WHERE "description" LIKE :1',
+                    (f"%{migration_name}%",),
+                )
+                count = cur.fetchone()[0]
 
-        if count == 1:
+        if count >= 1:
             return {"name": "flyway_history", "status": "ok",
-                    "detail": f"migration recorded in {table}"}
+                    "detail": f"migration recorded in {qualified}"}
         return {"name": "flyway_history", "status": "failed",
-                "detail": f"migration not found in {table} (count={count})"}
+                "detail": f"migration not found in {qualified} (count={count})"}
 
     except Exception as exc:
         raise RuntimeError(f"flyway_history: {exc}") from exc

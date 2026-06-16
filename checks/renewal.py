@@ -1,23 +1,24 @@
 import os
-import psycopg2
+from checks.db_conn import policy_conn
 
 
-def _query_count(cur, table, id_field, migration_name, extra_where=""):
-    sql = f"SELECT COUNT(*) FROM {table} WHERE {id_field} = %s"
-    if extra_where:
-        sql += f" AND {extra_where}"
-    cur.execute(sql, (migration_name,))
-    return cur.fetchone()[0]
-
-
-def run_row_count(migration_name: str, expected: int | None) -> dict:
+def _qualified_table():
+    schema = os.environ["RENEWAL_SCHEMA"]
     table = os.environ["RENEWAL_TABLE"]
-    id_field = os.environ["RENEWAL_MIGRATION_ID_FIELD"]
-    dsn = os.environ["DB_DSN"]
+    return f"{schema}.{table}"
+
+
+def run_row_count(year: int, month: int, expected: int | None) -> dict:
+    table = _qualified_table()
 
     try:
-        with psycopg2.connect(dsn) as conn, conn.cursor() as cur:
-            count = _query_count(cur, table, id_field, migration_name)
+        with policy_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"SELECT COUNT(ID) FROM {table} WHERE YEAR = :1 AND MONTH = :2",
+                    (str(year), str(month)),
+                )
+                count = cur.fetchone()[0]
 
         if expected is not None:
             if count == expected:
@@ -28,30 +29,33 @@ def run_row_count(migration_name: str, expected: int | None) -> dict:
 
         if count > 0:
             return {"name": "row_count", "status": "ok",
-                    "detail": f"{count} rows found"}
+                    "detail": f"{count} rows found for {year}/{month:02d}"}
         return {"name": "row_count", "status": "failed",
-                "detail": "0 rows found, expected > 0"}
+                "detail": f"0 rows found for {year}/{month:02d}, expected > 0"}
 
     except Exception as exc:
         raise RuntimeError(f"row_count: {exc}") from exc
 
 
-def run_no_renovar_count(migration_name: str) -> dict:
-    table = os.environ["RENEWAL_TABLE"]
-    id_field = os.environ["RENEWAL_MIGRATION_ID_FIELD"]
+def run_no_renovar_count(year: int, month: int) -> dict:
+    table = _qualified_table()
     blocked_field = os.environ["RENEWAL_BLOCKED_FIELD"]
-    dsn = os.environ["DB_DSN"]
 
     try:
-        with psycopg2.connect(dsn) as conn, conn.cursor() as cur:
-            count = _query_count(cur, table, id_field, migration_name,
-                                 extra_where=f"{blocked_field} = 'Yes'")
+        with policy_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"SELECT COUNT(ID) FROM {table} "
+                    f"WHERE YEAR = :1 AND MONTH = :2 AND {blocked_field} = 'YES'",
+                    (str(year), str(month)),
+                )
+                count = cur.fetchone()[0]
 
         if count >= 1:
             return {"name": "no_renovar_count", "status": "ok",
                     "detail": f"{count} 'No Renovar' rows found"}
         return {"name": "no_renovar_count", "status": "failed",
-                "detail": f"found 0 'No Renovar' rows, expected >= 1"}
+                "detail": "found 0 'No Renovar' rows, expected >= 1"}
 
     except Exception as exc:
         raise RuntimeError(f"no_renovar_count: {exc}") from exc
