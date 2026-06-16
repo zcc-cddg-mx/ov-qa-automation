@@ -25,7 +25,8 @@ def send(task: dict, check_results: list, overall: str, summary: str,
         files = None
     else:
         log_text = format_log(task, check_results, overall, summary)
-        exec_summary = executive_summary(log_text, overall)
+        exec_summary = executive_summary(log_text, overall, task={**task, "summary": summary},
+                                         check_results=check_results)
 
         data = {
             "ticket":            task["ticket"],

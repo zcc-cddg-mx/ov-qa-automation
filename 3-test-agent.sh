@@ -302,7 +302,7 @@ if os.path.exists(env_file):
             k, _, v = line.partition('=')
             os.environ.setdefault(k.strip(), v.strip())
 
-os.environ['OPENAI_API_KEY'] = 'sk-mock-test'
+os.environ['ANTHROPIC_AUTH_TOKEN'] = 'sk-mock-test'
 
 MOCK_SUMMARY = (
     "El despliegue del batch de renovaciones para julio 2026 fue aprobado exitosamente. "
@@ -311,13 +311,6 @@ MOCK_SUMMARY = (
     "Los checks de migración, salud del servicio y conteo de registros también pasaron sin inconvenientes. "
     "El ambiente DEV/UAT se encuentra en condiciones óptimas para continuar con el proceso de despliegue."
 )
-
-mock_choice = MagicMock()
-mock_choice.message.content = MOCK_SUMMARY
-mock_resp = MagicMock()
-mock_resp.choices = [mock_choice]
-mock_client = MagicMock()
-mock_client.chat.completions.create.return_value = mock_resp
 
 import callback
 
@@ -332,7 +325,7 @@ t = {
     'callback_url': 'http://localhost:${CALLBACK_PORT}/webhook/test',
 }
 
-with patch('checks.summary.OpenAI', return_value=mock_client):
+with patch('checks.summary._call_anthropic', return_value=MOCK_SUMMARY):
     callback.send(t, task['checks'], task['result'], task['summary'], task['updated_at'])
 PYEOF
 

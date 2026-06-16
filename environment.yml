@@ -34,5 +34,12 @@ dependencies:
       # Oracle driver — SQL checks against DEV database (thin mode, no Oracle Client needed)
       - oracledb>=2.0
 
+      # Excel parsing — read plates from renewal file (ren-data command)
+      - openpyxl>=3.1
+
+      # AI executive summary — Anthropic (primary, corporate proxy) + OpenAI (fallback)
+      - anthropic>=0.25
+      - openai>=1.0
+
       # Testing
       - pytest==9.0.3
