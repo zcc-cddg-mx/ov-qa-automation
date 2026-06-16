@@ -3,6 +3,12 @@
 #
 # Uso:
 #   ./3-test-agent.sh [--url http://host:5000] [--callback-port 9099] [--excel /ruta/archivo.xlsx]
+#                     [--mock-callback]
+#
+# Flags:
+#   --mock-callback   Ejecuta solo el caso 9 (callback con OpenAI mock)
+#                     sin necesitar servicio activo ni Excel. Útil para
+#                     verificar el formato multipart y executive_summary.
 #
 # Casos:
 #   1. Health check
@@ -12,18 +18,21 @@
 #   5. ren-data completo → 202 + polling hasta done/error
 #   6. Concurrencia — segunda tarea rechazada mientras la primera corre
 #   7. Historial GET /tasks
-#   8. Callback n8n — captura multipart y muestra campos + checks_log
+#   8. Callback n8n — multipart sin OpenAI
+#   9. Callback n8n — multipart con OpenAI mock (executive_summary)
 
 set -euo pipefail
 
 BASE_URL="http://localhost:5000"
 CALLBACK_PORT="9099"
 EXCEL=""
+MOCK_CALLBACK=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --url)           BASE_URL="$2";      shift 2 ;;
     --callback-port) CALLBACK_PORT="$2"; shift 2 ;;
     --excel)         EXCEL="$2";         shift 2 ;;
+    --mock-callback) MOCK_CALLBACK=1;    shift ;;
     *) echo "Unknown arg: $1"; exit 1 ;;
   esac
 done
@@ -34,6 +43,28 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 ok()   { echo "  ✓ $*"; }
 fail() { echo "  ✗ $*"; }
+
+# servidor HTTP mínimo reutilizable — escribe body+content-type, responde 200 y cierra
+cat > /tmp/_qa_callback_server.py << 'PYEOF'
+import sys, threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
+port = int(sys.argv[1])
+out  = sys.argv[2]
+
+class H(BaseHTTPRequestHandler):
+    def log_message(self, *a): pass
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(length)
+        ct = self.headers.get("Content-Type", "")
+        open(out, "wb").write(body)
+        open(out + ".ct", "w").write(ct)
+        self.send_response(200); self.end_headers(); self.wfile.write(b'ok')
+        threading.Thread(target=self.server.shutdown).start()
+
+HTTPServer(("0.0.0.0", port), H).serve_forever()
+PYEOF
 
 poll() {
   local task_id="$1" max_iter="$2" interval="$3"
@@ -50,7 +81,17 @@ poll() {
   echo "TIMEOUT — last status: ${STATUS}"
 }
 
+if [[ "${MOCK_CALLBACK}" == "1" ]]; then
+  echo "Modo --mock-callback: saltando casos 1-8, ejecutando solo caso 9."
+  # saltar al caso 9 — se define más abajo con goto simulado vía función
+  _run_mock_callback_only=1
+else
+  _run_mock_callback_only=0
+fi
+
 # ─── 1. Health ────────────────────────────────────────────────────────────────
+
+if [[ "${_run_mock_callback_only}" == "0" ]]; then
 
 echo ""
 echo "=== 1. Health ==="
@@ -153,28 +194,6 @@ echo "=== 8. Callback n8n — multipart sin OpenAI (desde tests/tasks/1f87e04f.j
 
 CALLBACK_FILE=$(mktemp /tmp/qa_callback_XXXX.bin)
 
-# servidor HTTP mínimo: acepta un POST, escribe body a archivo, responde 200
-cat > /tmp/_qa_callback_server.py << 'PYEOF'
-import sys, threading
-from http.server import HTTPServer, BaseHTTPRequestHandler
-
-port = int(sys.argv[1])
-out  = sys.argv[2]
-
-class H(BaseHTTPRequestHandler):
-    def log_message(self, *a): pass
-    def do_POST(self):
-        length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(length)
-        ct = self.headers.get("Content-Type", "")
-        open(out, "wb").write(body)
-        open(out + ".ct", "w").write(ct)
-        self.send_response(200); self.end_headers(); self.wfile.write(b'ok')
-        threading.Thread(target=self.server.shutdown).start()
-
-HTTPServer(("0.0.0.0", port), H).serve_forever()
-PYEOF
-
 python3 /tmp/_qa_callback_server.py "${CALLBACK_PORT}" "${CALLBACK_FILE}" &
 CB_PID=$!
 sleep 0.5
@@ -254,6 +273,8 @@ for part in parts[1:-1]:
 PYEOF
 
 rm -f "${CALLBACK_FILE}" "${CALLBACK_FILE}.ct"
+
+fi  # end if [[ _run_mock_callback_only == 0 ]]
 
 # ─── 9. Callback n8n — con OpenAI mock ───────────────────────────────────────
 
