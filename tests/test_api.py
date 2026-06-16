@@ -22,20 +22,14 @@ def test_validate_missing_fields(client):
 
 def test_validate_ren_data_missing_file(client):
     r = client.post("/validate", data={
-        "ticket": "ZNRX-001", "command": "ren-data", "module": "ams-policy",
-        "migration_name": "V_test", "branch": "f/test", "aux_branch": "f/test_aux",
-        "commit_id": "abc", "year": "2026", "month": "7",
+        "ticket": "ZNRX-001", "command": "ren-data", "year": "2026", "month": "7",
     }, content_type="multipart/form-data")
     assert r.status_code == 400
     assert "file" in r.get_json()["error"]
 
 
 def test_validate_ren_data_missing_year_month(client):
-    form, files = _multipart({
-        "ticket": "ZNRX-001", "command": "ren-data", "module": "ams-policy",
-        "migration_name": "V_test", "branch": "f/test", "aux_branch": "f/test_aux",
-        "commit_id": "abc",
-    })
+    form, files = _multipart({"ticket": "ZNRX-001", "command": "ren-data"})
     r = client.post("/validate", data={**form, **files},
                     content_type="multipart/form-data")
     assert r.status_code == 400
@@ -44,9 +38,8 @@ def test_validate_ren_data_missing_year_month(client):
 
 def test_validate_rules_missing_entity(client):
     r = client.post("/validate", data={
-        "ticket": "ZNRX-001", "command": "rules", "module": "ams-rule",
-        "migration_name": "V_test", "branch": "f/test", "aux_branch": "f/test_aux",
-        "commit_id": "abc",
+        "ticket": "ZNRX-001", "command": "rules",
+        "module": "ams-rule", "migration_name": "V_test",
     }, content_type="multipart/form-data")
     assert r.status_code == 400
     assert "entity" in r.get_json()["error"]
@@ -64,9 +57,6 @@ def test_validate_accepted_ren_data(client, ren_data_form):
 
 
 def test_validate_accepted_rules(client, rules_form):
-    r = client.post("/validate", data={k: str(v) for k, v in rules_form.items()},
-                    content_type="multipart/form-data")
-    # rules does not require file
     with patch("worker.run"), patch("worker._set_active"):
         r = client.post("/validate", data={k: str(v) for k, v in rules_form.items()},
                         content_type="multipart/form-data")

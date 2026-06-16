@@ -51,17 +51,12 @@ def _multipart(data: dict, file_content: bytes = b"fake-excel") -> tuple[dict, d
 @pytest.fixture
 def ren_data_form():
     return {
-        "ticket":         "ZNRX-001",
-        "command":        "ren-data",
-        "module":         "ams-policy",
-        "migration_name": "V2026_06_16__ZNRX_001_test",
-        "branch":         "feature/ZNRX_001",
-        "aux_branch":     "feature/ZNRX_001_aux",
-        "commit_id":      "abc123",
-        "year":           2026,
-        "month":          6,
-        "row_count":      100,
-        "callback_url":   "http://localhost:19999/webhook/test",
+        "ticket":       "ZNRX-001",
+        "command":      "ren-data",
+        "year":         2026,
+        "month":        6,
+        "row_count":    100,
+        "callback_url": "http://localhost:19999/webhook/test",
     }
 
 
@@ -72,15 +67,12 @@ def rules_form():
         "command":        "rules",
         "module":         "ams-rule",
         "migration_name": "V2026_06_16__ZNRX_002_test",
-        "branch":         "feature/ZNRX_002",
-        "aux_branch":     "feature/ZNRX_002_aux",
-        "commit_id":      "def456",
         "entity":         "VHPlanRules",
         "callback_url":   "http://localhost:19999/webhook/test",
     }
 
 
-# keep old json-payload fixture names as aliases for worker/db tests
+# aliases for worker/db tests
 @pytest.fixture
 def ren_data_payload(ren_data_form):
     return ren_data_form

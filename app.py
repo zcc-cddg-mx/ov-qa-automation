@@ -11,12 +11,13 @@ import worker
 
 app = Flask(__name__)
 
+REQUIRED_FIELDS = ["ticket", "command"]
+REQUIRED_REN_DATA = ["year", "month"]
+REQUIRED_RULES = ["module", "migration_name", "entity"]
+
+
 def _upload_dir() -> Path:
     return Path(os.environ.get("QA_UPLOAD_DIR", "/data/uploads"))
-REQUIRED_FIELDS = ["ticket", "command", "module", "migration_name",
-                   "branch", "aux_branch", "commit_id"]
-REQUIRED_REN_DATA = ["year", "month"]
-REQUIRED_RULES = ["entity"]
 
 
 def _now():
@@ -42,7 +43,7 @@ def validate():
         active = worker.get_active()
         return jsonify({"status": "rejected", "active_task": active}), 202
 
-    # save uploaded file
+    # save uploaded file (ren-data only)
     input_path = None
     if "file" in request.files:
         f = request.files["file"]
@@ -58,16 +59,17 @@ def validate():
     sample_size = int(body.get("sample_size") or os.environ.get("QA_SAMPLE_SIZE", 50))
     sample_size = min(sample_size, 200)
 
+    command = body["command"]
     task = {
         "task_id":        task_id,
         "ticket":         body["ticket"],
         "status":         "queued",
-        "command":        body["command"],
-        "module":         body["module"],
-        "migration_name": body["migration_name"],
-        "branch":         body["branch"],
-        "aux_branch":     body["aux_branch"],
-        "commit_id":      body["commit_id"],
+        "command":        command,
+        "module":         body.get("module", "ams-policy" if command == "ren-data" else ""),
+        "migration_name": body.get("migration_name", ""),
+        "branch":         body.get("branch", ""),
+        "aux_branch":     body.get("aux_branch", ""),
+        "commit_id":      body.get("commit_id", ""),
         "input_path":     input_path,
         "sample_size":    sample_size,
         "result":         None,
@@ -76,7 +78,7 @@ def validate():
         "error":          None,
         "created_at":     now,
         "updated_at":     now,
-        # extra fields for worker — not stored in qa_tasks
+        # worker-only fields — not stored in qa_tasks
         "year":           int(body["year"]) if body.get("year") else None,
         "month":          int(body["month"]) if body.get("month") else None,
         "row_count":      int(body["row_count"]) if body.get("row_count") else None,
