@@ -1,7 +1,12 @@
+import json
 import threading
 from datetime import datetime, timezone
 
 from db import update_task
+import checks.flyway as flyway
+import checks.health as health
+import checks.renewal as renewal
+import checks.rules as rules
 
 _lock = threading.Lock()
 _active: dict = {}
@@ -42,29 +47,60 @@ def _now():
 
 def _execute(task):
     task_id = task["task_id"]
+    command = task["command"]
+    module = task["module"]
+    migration_name = task["migration_name"]
+
     try:
         update_task(task_id, status="running", updated_at=_now())
-        print(f"[CHECK]  task_id={task_id} ticket={task['ticket']} running (stub)")
+        print(f"[RECV]   task_id={task_id} ticket={task['ticket']} running")
 
-        # --- Fase 3: checks reales van aquí ---
-        checks = []
-        result = "approved"
-        summary = "Stub — no checks executed yet"
-        # --------------------------------------
+        check_results = []
 
-        import json
+        # flyway_history — ambos comandos
+        result = flyway.run(migration_name)
+        check_results.append(result)
+        print(f"[CHECK]  flyway_history — {result['status']} ({result['detail']})")
+
+        # endpoint_health — ambos comandos
+        result = health.run(module)
+        check_results.append(result)
+        print(f"[CHECK]  endpoint_health — {result['status']} ({result['detail']})")
+
+        # checks específicos por command
+        if command == "ren-data":
+            result = renewal.run_row_count(migration_name, task.get("row_count"))
+            check_results.append(result)
+            print(f"[CHECK]  row_count — {result['status']} ({result['detail']})")
+
+            result = renewal.run_no_renovar_count(migration_name)
+            check_results.append(result)
+            print(f"[CHECK]  no_renovar_count — {result['status']} ({result['detail']})")
+
+        elif command == "rules":
+            result = rules.run_entity_rows(task["entity"], migration_name)
+            check_results.append(result)
+            print(f"[CHECK]  entity_rows — {result['status']} ({result['detail']})")
+
+        failed = [c for c in check_results if c["status"] == "failed"]
+        overall = "approved" if not failed else "rejected"
+        summary = (
+            f"All {len(check_results)} checks passed"
+            if not failed
+            else f"{len(failed)} check(s) failed"
+        )
+
         update_task(
             task_id,
             status="done",
-            result=result,
-            checks=json.dumps(checks),
+            result=overall,
+            checks=json.dumps(check_results),
             summary=summary,
             updated_at=_now(),
         )
-        print(f"[DONE]   task_id={task_id} result={result}")
+        print(f"[DONE]   task_id={task_id} result={overall} ({summary})")
 
     except Exception as exc:
-        import json
         update_task(
             task_id,
             status="error",

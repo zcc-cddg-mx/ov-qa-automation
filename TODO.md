@@ -27,11 +27,11 @@ Plan completo: [architecture/execution_plan.md](architecture/execution_plan.md)
 
 ## Fase 3 — Checks ⚠️ requiere env vars de backend
 
-- [ ] `checks/flyway.py` — `flyway_history`
-- [ ] `checks/health.py` — `endpoint_health`
-- [ ] `checks/renewal.py` — `row_count` + `no_renovar_count`
-- [ ] `checks/rules.py` — `entity_rows`
-- [ ] Worker real — acumula resultados, nunca aborta al primer fallo
+- [x] `checks/flyway.py` — `flyway_history`
+- [x] `checks/health.py` — `endpoint_health`
+- [x] `checks/renewal.py` — `row_count` + `no_renovar_count`
+- [x] `checks/rules.py` — `entity_rows`
+- [x] Worker real — acumula resultados, nunca aborta al primer fallo
 
 ## Fase 4 — Callback
 
