@@ -3,6 +3,7 @@ import threading
 from datetime import datetime, timezone
 
 from db import update_task
+import callback
 import checks.flyway as flyway
 import checks.health as health
 import checks.renewal as renewal
@@ -51,11 +52,15 @@ def _execute(task):
     module = task["module"]
     migration_name = task["migration_name"]
 
+    check_results = []
+    overall = None
+    summary = None
+    exec_error = None
+    completed_at = None
+
     try:
         update_task(task_id, status="running", updated_at=_now())
         print(f"[RECV]   task_id={task_id} ticket={task['ticket']} running")
-
-        check_results = []
 
         # flyway_history — ambos comandos
         result = flyway.run(migration_name)
@@ -89,6 +94,7 @@ def _execute(task):
             if not failed
             else f"{len(failed)} check(s) failed"
         )
+        completed_at = _now()
 
         update_task(
             task_id,
@@ -96,20 +102,23 @@ def _execute(task):
             result=overall,
             checks=json.dumps(check_results),
             summary=summary,
-            updated_at=_now(),
+            updated_at=completed_at,
         )
         print(f"[DONE]   task_id={task_id} result={overall} ({summary})")
 
     except Exception as exc:
+        exec_error = str(exc)
+        completed_at = _now()
         update_task(
             task_id,
             status="error",
-            error=str(exc),
-            checks=json.dumps([]),
-            updated_at=_now(),
+            error=exec_error,
+            checks=json.dumps(check_results),
+            updated_at=completed_at,
         )
-        print(f"[ERROR]  task_id={task_id} {exc}")
+        print(f"[ERROR]  task_id={task_id} {exec_error}")
 
     finally:
+        callback.send(task, check_results, overall, summary, completed_at, exec_error)
         _set_active(None)
         release()

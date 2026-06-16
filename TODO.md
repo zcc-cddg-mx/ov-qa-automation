@@ -35,7 +35,7 @@ Plan completo: [architecture/execution_plan.md](architecture/execution_plan.md)
 
 ## Fase 4 — Callback
 
-- [ ] `callback.py` — POST a n8n, retry 3x (2s/4s/8s), en `finally`
+- [x] `callback.py` — POST a n8n, retry 3x (2s/4s/8s), en `finally`
 
 ## Fase 5 — Tests
 
