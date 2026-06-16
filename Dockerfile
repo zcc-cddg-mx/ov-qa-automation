@@ -1,8 +1,5 @@
-FROM ams-alpine-lite:12
+FROM ov-agent-base:latest
 
-RUN apk add --no-cache python3 py3-pip
-
-RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
 
 COPY requirements.txt /tmp/requirements.txt
