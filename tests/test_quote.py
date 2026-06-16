@@ -1,4 +1,5 @@
 import pytest
+import requests.exceptions
 from unittest.mock import MagicMock, patch
 
 
@@ -125,6 +126,82 @@ def test_quote_flow_no_factor(monkeypatch):
 
     assert result["status"] == "failed"
     assert "no FACTOR" in result["detail"]
+
+
+def test_quote_flow_http_4xx_is_skipped(monkeypatch):
+    _base_env(monkeypatch)
+    factor = 0.0219
+
+    bad_resp = MagicMock()
+    bad_resp.status_code = 400
+    bad_resp.json.return_value = {"text": "El tipo de vehículo no puede ser cotizado"}
+    http_err = requests.exceptions.HTTPError(response=bad_resp)
+
+    with patch("checks.quote.requests.post", side_effect=[
+             _mock_vehicle_data_resp(),
+             http_err,
+         ]), \
+         patch("checks.db_conn.oracledb.connect", return_value=_mock_conn_factor(factor)):
+        from checks import quote
+        result = quote.run_plate("MBC8721", 2026, 7, "tok")
+
+    assert result["status"] == "skipped"
+    assert "MBC8721" in result["detail"]
+
+
+def test_quote_flow_http_5xx_is_failed(monkeypatch):
+    _base_env(monkeypatch)
+    factor = 0.0219
+
+    bad_resp = MagicMock()
+    bad_resp.status_code = 500
+    bad_resp.json.side_effect = Exception("not json")
+    bad_resp.text = "Internal Server Error"
+    http_err = requests.exceptions.HTTPError(response=bad_resp)
+
+    with patch("checks.quote.requests.post", side_effect=[
+             _mock_vehicle_data_resp(),
+             http_err,
+         ]), \
+         patch("checks.db_conn.oracledb.connect", return_value=_mock_conn_factor(factor)):
+        from checks import quote
+        result = quote.run_plate("MBC8721", 2026, 7, "tok")
+
+    assert result["status"] == "failed"
+    assert "500" in result["detail"]
+
+
+def test_quote_flow_non_quotable_vehicle_type_is_skipped(monkeypatch):
+    _base_env(monkeypatch)
+
+    furgoneta = _mock_vehicle_data_resp()
+    furgoneta.json.return_value["body"]["motorGenericosTarification"]["car"]["typeOfVehicle"] = "FURGONETA"
+
+    with patch("checks.quote.requests.post", return_value=furgoneta):
+        from checks import quote
+        result = quote.run_plate("MBC8721", 2026, 7, "tok")
+
+    assert result["status"] == "skipped"
+    assert "FURGONETA" in result["detail"]
+
+
+def test_quote_flow_vehicle_blocked_is_skipped(monkeypatch):
+    _base_env(monkeypatch)
+
+    blocked_resp = MagicMock()
+    blocked_resp.status_code = 200
+    blocked_resp.json.return_value = {
+        "status": "ERROR",
+        "messages": [{"code": "VEHICLE BLOCKED", "type": "ERROR",
+                       "text": "No es posible gestionar la renovación de este vehículo"}],
+    }
+
+    with patch("checks.quote.requests.post", return_value=blocked_resp):
+        from checks import quote
+        result = quote.run_plate("MBC8721", 2026, 7, "tok")
+
+    assert result["status"] == "skipped"
+    assert "renovación" in result["detail"]
 
 
 def test_quote_run_multiple(monkeypatch):

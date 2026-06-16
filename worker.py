@@ -1,4 +1,5 @@
 import json
+import os
 import threading
 from datetime import datetime, timezone
 
@@ -85,6 +86,7 @@ def _execute(task):
             print(f"[CHECK]  no_renovar_count — {result['status']} ({result['detail']})")
 
             if task.get("input_path"):
+                min_ok = int(os.environ.get("QA_QUOTE_MIN_OK_COUNT", "1"))
                 quote_results, plates = run_from_excel(
                     task["input_path"], task["year"], task["month"],
                     task.get("sample_size"),
@@ -92,7 +94,20 @@ def _execute(task):
                 print(f"[CHECK]  quote_flow — muestra {len(plates)} placas")
                 for qr in quote_results:
                     check_results.append(qr)
-                    print(f"[CHECK]  quote_flow — {qr['status']} ({qr['detail']})")
+                    print(f"[CHECK]  quote_flow:{qr['name'].split(':',1)[-1]} — {qr['status']} ({qr['detail']})")
+
+                quotable = [r for r in quote_results if r["status"] != "skipped"]
+                ok_count = sum(1 for r in quotable if r["status"] == "ok")
+                skipped = len(quote_results) - len(quotable)
+                batch_ok = ok_count >= min_ok
+                batch_status = "ok" if batch_ok else "failed"
+                batch_detail = (
+                    f"{ok_count}/{len(quotable)} quotable plates ok (min={min_ok})"
+                    + (f", {skipped} skipped (non-quotable)" if skipped else "")
+                )
+                batch_check = {"name": "quote_flow", "status": batch_status, "detail": batch_detail}
+                check_results.append(batch_check)
+                print(f"[CHECK]  quote_flow — {batch_status} ({batch_detail})")
 
         elif command == "rules":
             result = rules.run_entity_rows(task["entity"], migration_name)

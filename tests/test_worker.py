@@ -127,6 +127,67 @@ def test_worker_callback_always_fired(tmp_db):
     mock_cb.assert_called_once()
 
 
+def _quote_result(plate, status):
+    return {"name": f"quote_flow:{plate}", "status": status, "detail": "..."}
+
+
+def test_worker_quote_flow_approved_with_skips(tmp_db, monkeypatch):
+    """2 ok + 8 skipped con min=1 → approved."""
+    _insert_task(tmp_db)
+    monkeypatch.setenv("QA_QUOTE_MIN_OK_COUNT", "1")
+    task = {**TASK, "input_path": "/fake/file.xlsx"}
+
+    quote_results = [
+        _quote_result("P001", "ok"),
+        _quote_result("P002", "ok"),
+        _quote_result("P003", "skipped"),
+        _quote_result("P004", "skipped"),
+        _quote_result("P005", "skipped"),
+    ]
+
+    with patch("worker.flyway.run", return_value=_ok_check("flyway_history")), \
+         patch("worker.health.run", return_value=_ok_check("endpoint_health")), \
+         patch("worker.renewal.run_row_count", return_value=_ok_check("row_count")), \
+         patch("worker.renewal.run_no_renovar_count", return_value=_ok_check("no_renovar_count")), \
+         patch("worker.run_from_excel", return_value=(quote_results, ["P001","P002","P003","P004","P005"])), \
+         patch("callback.send"):
+        worker._execute(task)
+
+    row = db_module.get_task("w001")
+    assert row["result"] == "approved"
+    batch = next(c for c in row["checks"] if c["name"] == "quote_flow")
+    assert batch["status"] == "ok"
+    assert "2/2" in batch["detail"]
+    assert "3 skipped" in batch["detail"]
+
+
+def test_worker_quote_flow_rejected_zero_ok(tmp_db, monkeypatch):
+    """0 ok y min=1 → rejected aunque haya skips."""
+    _insert_task(tmp_db)
+    monkeypatch.setenv("QA_QUOTE_MIN_OK_COUNT", "1")
+    task = {**TASK, "input_path": "/fake/file.xlsx"}
+
+    quote_results = [
+        _quote_result("P001", "failed"),  # mismatch de prima
+        _quote_result("P002", "skipped"),
+        _quote_result("P003", "skipped"),
+    ]
+
+    with patch("worker.flyway.run", return_value=_ok_check("flyway_history")), \
+         patch("worker.health.run", return_value=_ok_check("endpoint_health")), \
+         patch("worker.renewal.run_row_count", return_value=_ok_check("row_count")), \
+         patch("worker.renewal.run_no_renovar_count", return_value=_ok_check("no_renovar_count")), \
+         patch("worker.run_from_excel", return_value=(quote_results, ["P001","P002","P003"])), \
+         patch("callback.send"):
+        worker._execute(task)
+
+    row = db_module.get_task("w001")
+    assert row["result"] == "rejected"
+    batch = next(c for c in row["checks"] if c["name"] == "quote_flow")
+    assert batch["status"] == "failed"
+    assert "0/1" in batch["detail"]
+
+
 def test_worker_rules_command(tmp_db):
     task = {**TASK, "task_id": "w002", "command": "rules",
             "module": "ams-rule", "entity": "VHPlanRules"}
