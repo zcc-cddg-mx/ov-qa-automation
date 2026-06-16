@@ -9,6 +9,7 @@ import checks.health as health
 import checks.renewal as renewal
 import checks.rules as rules
 import checks.quote as quote
+from checks.quote import run_from_excel
 
 _lock = threading.Lock()
 _active: dict = {}
@@ -83,9 +84,12 @@ def _execute(task):
             check_results.append(result)
             print(f"[CHECK]  no_renovar_count — {result['status']} ({result['detail']})")
 
-            plates = task.get("plates") or []
-            if plates:
-                quote_results = quote.run(plates, task["year"], task["month"])
+            if task.get("input_path"):
+                quote_results, plates = run_from_excel(
+                    task["input_path"], task["year"], task["month"],
+                    task.get("sample_size"),
+                )
+                print(f"[CHECK]  quote_flow — muestra {len(plates)} placas")
                 for qr in quote_results:
                     check_results.append(qr)
                     print(f"[CHECK]  quote_flow — {qr['status']} ({qr['detail']})")

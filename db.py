@@ -24,6 +24,8 @@ def init_db():
                 branch         TEXT,
                 aux_branch     TEXT,
                 commit_id      TEXT,
+                input_path     TEXT,
+                sample_size    INTEGER,
                 result         TEXT,
                 checks         TEXT,
                 summary        TEXT,
@@ -39,12 +41,12 @@ def insert_task(task):
         conn.execute("""
             INSERT INTO qa_tasks
                 (task_id, ticket, status, command, module, migration_name,
-                 branch, aux_branch, commit_id, result, checks, summary, error,
-                 created_at, updated_at)
+                 branch, aux_branch, commit_id, input_path, sample_size,
+                 result, checks, summary, error, created_at, updated_at)
             VALUES
                 (:task_id, :ticket, :status, :command, :module, :migration_name,
-                 :branch, :aux_branch, :commit_id, :result, :checks, :summary, :error,
-                 :created_at, :updated_at)
+                 :branch, :aux_branch, :commit_id, :input_path, :sample_size,
+                 :result, :checks, :summary, :error, :created_at, :updated_at)
         """, task)
 
 

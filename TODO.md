@@ -52,10 +52,17 @@ Plan completo: [architecture/execution_plan.md](architecture/execution_plan.md)
 - [x] `endpoint_health` — login JWT → `body.accessToken` → GET con Bearer token
 - [x] 43 tests pasando (mocks actualizados para Oracle + JWT)
 
-## Fase 5.1 — Verificacion via endpoints
+## Fase 5.1 — Verificacion via endpoints ✅
 
-- [ ] Entendimiento de un flujo de cotizacion
-- [ ] Recibir listado de placas a validar
+- [x] Entendimiento del flujo de cotizacion (vehicleData → calculatePlans)
+- [x] `checks/auth.py` — get_token() compartido (JWT login)
+- [x] `checks/quote.py` — verifica sumInsured × FACTOR == premiumAnnual por placa
+- [x] `checks/excel.py` — lee Excel, extrae placas, muestrea `sample_size` al azar
+- [x] `POST /validate` migrado a `multipart/form-data` con campo `file` (Excel)
+- [x] Placas leídas del Excel (no del request) — `RENEWAL_PLATE_FIELD`, `QA_SAMPLE_SIZE`
+- [x] SQLite: columnas `input_path` y `sample_size`
+- [x] 54 tests pasando
+- [x] Pruebas reales contra UAT — verificación sumInsured × FACTOR == premiumAnnual confirmada
 
 ## Fase 6 — Deploy
 

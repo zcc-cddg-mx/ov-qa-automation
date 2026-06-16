@@ -14,6 +14,8 @@ def _task(task_id="t001"):
         "branch":         "feature/test",
         "aux_branch":     "feature/test_aux",
         "commit_id":      "abc123",
+        "input_path":     None,
+        "sample_size":    None,
         "result":         None,
         "checks":         json.dumps([]),
         "summary":        None,

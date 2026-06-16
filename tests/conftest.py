@@ -1,5 +1,5 @@
+import io
 import os
-import threading
 import pytest
 
 import db as db_module
@@ -18,7 +18,6 @@ def tmp_db(monkeypatch, tmp_path):
 
 @pytest.fixture(autouse=True)
 def reset_worker_lock():
-    # garantiza que el lock esté libre al inicio de cada test
     if worker_module._lock.locked():
         try:
             worker_module._lock.release()
@@ -35,14 +34,22 @@ def reset_worker_lock():
 
 
 @pytest.fixture
-def client(tmp_db):
+def client(tmp_db, tmp_path, monkeypatch):
+    monkeypatch.setenv("QA_UPLOAD_DIR", str(tmp_path / "uploads"))
     flask_app.config["TESTING"] = True
     with flask_app.test_client() as c:
         yield c
 
 
+def _multipart(data: dict, file_content: bytes = b"fake-excel") -> tuple[dict, dict]:
+    form = {k: str(v) for k, v in data.items()}
+    files = {"file": (io.BytesIO(file_content), "baseticketMES.xlsx",
+                      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
+    return form, files
+
+
 @pytest.fixture
-def ren_data_payload():
+def ren_data_form():
     return {
         "ticket":         "ZNRX-001",
         "command":        "ren-data",
@@ -59,7 +66,7 @@ def ren_data_payload():
 
 
 @pytest.fixture
-def rules_payload():
+def rules_form():
     return {
         "ticket":         "ZNRX-002",
         "command":        "rules",
@@ -71,3 +78,14 @@ def rules_payload():
         "entity":         "VHPlanRules",
         "callback_url":   "http://localhost:19999/webhook/test",
     }
+
+
+# keep old json-payload fixture names as aliases for worker/db tests
+@pytest.fixture
+def ren_data_payload(ren_data_form):
+    return ren_data_form
+
+
+@pytest.fixture
+def rules_payload(rules_form):
+    return rules_form
