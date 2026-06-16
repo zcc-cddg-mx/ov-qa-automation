@@ -18,12 +18,14 @@ _MONTHS_ES = [
 
 
 def _fallback_summary(task: dict, check_results: list, overall: str) -> str:
-    now = datetime.now()
-    month = _MONTHS_ES[now.month]
-    year = now.year
-    ticket = (task or {}).get("ticket", "N/A")
-    module = (task or {}).get("module", "N/A")
-    sample = (task or {}).get("sample_size", "")
+    t = task or {}
+    raw_month = t.get("month")
+    raw_year = t.get("year")
+    month = _MONTHS_ES[int(raw_month)] if raw_month and 1 <= int(raw_month) <= 12 else _MONTHS_ES[datetime.now().month]
+    year = int(raw_year) if raw_year else datetime.now().year
+    ticket = t.get("ticket", "N/A")
+    module = t.get("module", "N/A")
+    sample = t.get("sample_size", "")
     sample_text = f" Se validaron {sample} pólizas de la muestra aleatoria." if sample else ""
     env = os.environ.get("QA_ENVIRONMENT", "UAT")
     return (

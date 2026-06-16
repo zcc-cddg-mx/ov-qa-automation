@@ -77,10 +77,9 @@ def test_executive_summary_static_fallback_approved(monkeypatch):
     monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.setenv("QA_ENVIRONMENT", "UAT")
-    result = executive_summary("log", "approved", TASK, CHECKS)
-    from datetime import datetime
-    now = datetime.now()
-    assert str(now.year) in result
+    task_with_date = {**TASK, "year": 2026, "month": 3}
+    result = executive_summary("log", "approved", task_with_date, CHECKS)
+    assert "marzo 2026" in result
     assert TASK["ticket"] in result
     assert TASK["module"] in result
 

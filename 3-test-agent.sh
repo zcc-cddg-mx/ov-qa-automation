@@ -316,6 +316,7 @@ t = {
     'command': task['command'], 'module': task['module'],
     'migration_name': task.get('migration_name', ''),
     'sample_size': task.get('sample_size', 10),
+    'year': task.get('year', 2026), 'month': task.get('month', 7),
     'branch': '', 'aux_branch': '', 'commit_id': '',
     'callback_url': 'http://localhost:${CALLBACK_PORT}/webhook/test',
 }
