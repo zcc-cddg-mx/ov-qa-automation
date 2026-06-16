@@ -61,10 +61,12 @@ Plan completo: [architecture/execution_plan.md](architecture/execution_plan.md)
 
 ## Fase 6 — Deploy
 
-- [ ] Build `qa-agent-base`: `docker build -f Dockerfile.base -t qa-agent-base:latest .`
-- [ ] Build `ov-qa-agent`: `docker build -t ov-qa-agent:latest .`
-- [ ] Smoke test local con env vars reales (`POST /validate` con Excel real)
-- [ ] Transferir imagen a SERVICIOSIAS
-- [ ] Levantar container con `docker run` completo (ver contrato §10)
+- [x] Dockerfile single-stage — `FROM ams-ubuntu-lite:latest` + python3-venv + pip + código
+- [x] Smoke test local — `GET /health → 200`, end-to-end con mock n8n (`task b8a5d998`, 7/7 checks ok)
+- [x] Callback verificado — multipart/form-data con `checks_log.txt` + `executive_summary` en español
+- [x] `ov-qa-agent-build.tar.gz` generado (12 KB) — código fuente + Dockerfile para build en SERVICIOSIAS
+- [ ] Transferir `ov-qa-agent-build.tar.gz` + `.env` a SERVICIOSIAS
+- [ ] Build en SERVICIOSIAS: `docker build -t ov-qa-agent:latest .`
+- [ ] Levantar container: `docker run -d --name ov-qa-agent --restart unless-stopped -p 5000:5000 -v qa-agent-data:/data --env-file .env ov-qa-agent:latest`
 - [ ] Verificar `GET /health` desde SERVICIOSIAS
 - [ ] Prueba end-to-end con ticket real desde n8n
