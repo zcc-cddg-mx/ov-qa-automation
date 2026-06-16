@@ -69,7 +69,7 @@ def test_validate_rejected_when_locked(client, ren_data_form, rules_form):
         client.post("/validate", data={**form, **files},
                     content_type="multipart/form-data")
 
-    with patch("worker.is_locked", return_value=True), \
+    with patch("worker.acquire", return_value=False), \
          patch("worker.get_active", return_value={"task_id": "prev", "ticket": "ZNRX-000"}):
         r = client.post("/validate", data={k: str(v) for k, v in rules_form.items()},
                         content_type="multipart/form-data")
@@ -100,7 +100,7 @@ def test_status_found(client, ren_data_form):
 def test_tasks_list(client, ren_data_form, rules_form):
     form, files = _multipart(ren_data_form)
     with patch("worker.run"), patch("worker._set_active"), \
-         patch("worker.is_locked", return_value=False):
+         patch("worker.acquire", return_value=True):
         client.post("/validate", data={**form, **files},
                     content_type="multipart/form-data")
         client.post("/validate", data={k: str(v) for k, v in rules_form.items()},
