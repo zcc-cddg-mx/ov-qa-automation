@@ -44,9 +44,17 @@ Plan completo: [architecture/execution_plan.md](architecture/execution_plan.md)
 - [x] `tests/test_worker.py`
 - [x] `tests/test_db.py`
 
+## Validación DEV real (previa a Fase 6) ✅
+
+- [x] Oracle DB — `oracledb` thin mode, JDBC DSN parser, credenciales separadas por schema
+- [x] `flyway_history` — tabla `ECU_POLICY."schema_history"`, filtro por `"description"`
+- [x] `row_count` + `no_renovar_count` — filtro YEAR/MONTH, `BLOCKED_RENEWAL = 'YES'`
+- [x] `endpoint_health` — login JWT → `body.accessToken` → GET con Bearer token
+- [x] 43 tests pasando (mocks actualizados para Oracle + JWT)
+
 ## Fase 6 — Deploy
 
 - [ ] Build `qa-agent-base` y `ov-qa-agent`
-- [ ] Smoke test local con env vars reales
+- [ ] Smoke test local con env vars reales (POST /validate con payload real)
 - [ ] Deploy en SERVICIOSIAS
-- [ ] Prueba end-to-end con ticket real
+- [ ] Prueba end-to-end con ticket real desde n8n
