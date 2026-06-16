@@ -276,10 +276,10 @@ rm -f "${CALLBACK_FILE}" "${CALLBACK_FILE}.ct"
 
 fi  # end if [[ _run_mock_callback_only == 0 ]]
 
-# ─── 9. Callback n8n — con OpenAI mock ───────────────────────────────────────
+# ─── 9. Callback n8n — con Anthropic real ────────────────────────────────────
 
 echo ""
-echo "=== 9. Callback n8n — multipart con OpenAI mock (executive_summary) ==="
+echo "=== 9. Callback n8n — multipart con Anthropic real (executive_summary) ==="
 
 CALLBACK_FILE2=$(mktemp /tmp/qa_callback_XXXX.bin)
 
@@ -290,10 +290,9 @@ echo "  callback listener PID=${CB_PID2} en localhost:${CALLBACK_PORT}"
 
 python3 - << PYEOF
 import json, sys, os
-from unittest.mock import patch, MagicMock
 sys.path.insert(0, '${SCRIPT_DIR}')
 
-# cargar .env (sin OPENAI_API_KEY para que el mock tome control)
+# cargar .env completo — ANTHROPIC_AUTH_TOKEN incluido para llamada real
 env_file = '${SCRIPT_DIR}/.env'
 if os.path.exists(env_file):
     for line in open(env_file):
@@ -301,10 +300,6 @@ if os.path.exists(env_file):
         if line and not line.startswith('#') and '=' in line:
             k, _, v = line.partition('=')
             os.environ.setdefault(k.strip(), v.strip())
-
-# Sin ANTHROPIC_AUTH_TOKEN — el fallback estático del código toma control
-os.environ.pop('ANTHROPIC_AUTH_TOKEN', None)
-os.environ.pop('OPENAI_API_KEY', None)
 
 import callback
 

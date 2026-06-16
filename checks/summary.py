@@ -38,50 +38,50 @@ def _fallback_summary(task: dict, check_results: list, overall: str) -> str:
 
 
 _PROMPT = """\
-You are a senior QA lead preparing executive summaries for software validation results in an enterprise environment.
+Eres un líder de QA senior preparando resúmenes ejecutivos de resultados de validación de software en un entorno empresarial.
 
-Context:
-- Ticket ID: {ticket}
-- Module: {module}
-- Environment: {environment}
+Contexto:
+- ID de Ticket: {ticket}
+- Módulo: {module}
+- Ambiente: {environment}
 
-Technical Summary:
+Resumen Técnico:
 {technical_summary}
 
-Validation Areas:
+Áreas de Validación:
 {checks}
 
-Sample Size: {sample_size}
+Tamaño de Muestra: {sample_size}
 
-Overall Status: {overall_status}
+Estado General: {overall_status}
 
-Instructions:
-1. Write a concise executive summary (max 5 lines)
-2. Use business-oriented language (avoid low-level technical detail)
-3. Clearly explain: what was validated, whether the system behaves correctly, confidence level based on validations
-4. Highlight if validations cover critical flows (APIs, DB, business logic)
-5. Provide a final conclusion:
-   - If everything is OK → "Ready for release"
-   - If any issue → "Not ready for release"
-6. Assign a Risk Level:
-   - LOW → all validations passed, no impact
-   - MEDIUM → minor issues, low risk
-   - HIGH → failures affecting functionality
-7. Generate a Jira-ready comment
+Instrucciones:
+1. Escribe un resumen ejecutivo conciso (máximo 5 líneas)
+2. Usa lenguaje orientado al negocio (evita detalles técnicos de bajo nivel)
+3. Explica claramente: qué se validó, si el sistema funciona correctamente, nivel de confianza basado en las validaciones
+4. Destaca si las validaciones cubren flujos críticos (APIs, BD, lógica de negocio)
+5. Proporciona una conclusión final:
+   - Si todo está OK → "Listo para liberación"
+   - Si hay algún problema → "No listo para liberación"
+6. Asigna un Nivel de Riesgo:
+   - BAJO → todas las validaciones pasaron, sin impacto
+   - MEDIO → problemas menores, riesgo bajo
+   - ALTO → fallas que afectan la funcionalidad
+7. Genera un comentario listo para Jira
 
-Output format (use exactly these labels):
+Formato de salida (usa exactamente estas etiquetas):
 
-Executive Summary:
-<text>
+Resumen Ejecutivo:
+<texto>
 
-Conclusion:
-<Ready for release | Not ready for release>
+Conclusión:
+<Listo para liberación | No listo para liberación>
 
-Risk Level:
-<LOW | MEDIUM | HIGH>
+Nivel de Riesgo:
+<BAJO | MEDIO | ALTO>
 
-Jira Comment:
-<short comment suitable for Jira update>"""
+Comentario Jira:
+<comentario corto adecuado para actualización en Jira>"""
 
 
 _CATEGORY_MAP = {
