@@ -16,7 +16,8 @@ def _get_token() -> str:
         timeout=10,
     )
     resp.raise_for_status()
-    return resp.json()["token"]
+    data = resp.json()
+    return data["body"]["accessToken"]
 
 
 def run(module: str) -> dict:
@@ -38,14 +39,25 @@ def run(module: str) -> dict:
             },
             timeout=10,
         )
-        body = resp.json() if resp.content else {}
+        if resp.status_code == 200:
+            try:
+                body = resp.json()
+                up = body.get("status") == "UP"
+                detail = f"GET {url} → 200 {body.get('status', 'OK')}"
+            except Exception:
+                up = resp.text.strip().upper() in ("OK", "UP")
+                detail = f"GET {url} → 200 {resp.text.strip()}"
 
-        if resp.status_code == 200 and body.get("status") == "UP":
-            return {"name": "endpoint_health", "status": "ok",
-                    "detail": f"GET {url} → 200 UP"}
+            if up:
+                return {"name": "endpoint_health", "status": "ok", "detail": detail}
+            return {"name": "endpoint_health", "status": "failed", "detail": detail}
 
+        try:
+            body = resp.json()
+        except Exception:
+            body = {}
         return {"name": "endpoint_health", "status": "failed",
-                "detail": f"GET {url} → {resp.status_code} status={body.get('status')}"}
+                "detail": f"GET {url} → {resp.status_code} {body or resp.text[:100]}"}
 
     except requests.Timeout:
         return {"name": "endpoint_health", "status": "failed",

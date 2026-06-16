@@ -63,7 +63,7 @@ def test_flyway_db_error(monkeypatch):
 def _mock_login_resp(token="test-token"):
     m = MagicMock()
     m.status_code = 200
-    m.json.return_value = {"token": token}
+    m.json.return_value = {"body": {"accessToken": token}}
     return m
 
 
