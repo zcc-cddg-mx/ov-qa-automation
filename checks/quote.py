@@ -1,8 +1,25 @@
 import os
+import random
 import requests
 
 from checks.auth import get_token
 from checks.db_conn import policy_conn
+
+REFERENCE_PLATES = [
+    "PDL8752", "PDG1948", "GSV4719", "PDD6509", "ABH3564",
+    "PDG1254", "PDG9912", "PDI2045", "GTC5230", "PDK5119",
+    "PDO4227", "PDO3417", "GTF2294", "PDS7078", "G03102894",
+    "T03132732", "ABN6689", "GSZ9107", "PDD5333", "PDS7072",
+    "GTK6410", "PDX4475", "GTC4154", "PDM3558", "PDE5465",
+    "MBF7235", "PDS2190", "PFF3244", "PCW1338", "PFG6477",
+    "GTC5216", "GTI3640", "PDS5476", "GTJ7171", "PDW5604",
+    "PFG6804", "PFG63721", "TBL8519", "T03145808", "PDS7225",
+    "PDS7455", "PFG7741", "PDS6020",
+]
+
+
+def sample_plates(n: int = 10) -> list[str]:
+    return random.sample(REFERENCE_PLATES, min(n, len(REFERENCE_PLATES)))
 
 
 def _base_url() -> str:
@@ -64,7 +81,7 @@ def _calculate_plans(car: dict, token: str) -> dict:
         },
         "testMode": False,
     }
-    resp = requests.post(url, json=body, headers=_headers(token), timeout=15)
+    resp = requests.post(url, json=body, headers=_headers(token), timeout=30)
     resp.raise_for_status()
     data = resp.json()
     if data.get("status") != "OK":
@@ -147,6 +164,9 @@ def run_plate(plate: str, year: int, month: int, token: str) -> dict:
             ),
         }
 
+    except requests.Timeout:
+        return {"name": name, "status": "failed",
+                "detail": f"plate={plate} — timeout calling API (>30s)"}
     except Exception as exc:
         raise RuntimeError(f"quote_flow [{plate}]: {exc}") from exc
 
