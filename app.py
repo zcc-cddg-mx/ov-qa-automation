@@ -39,7 +39,7 @@ def validate():
         return jsonify({"status": "error",
                         "error": f"Missing required field(s): {', '.join(missing)}"}), 400
 
-    if worker.is_locked():
+    if not worker.acquire():
         active = worker.get_active()
         return jsonify({"status": "rejected", "active_task": active}), 202
 
@@ -119,6 +119,15 @@ def health():
 
 
 if __name__ == "__main__":
+    # normalize legacy env typos from .env (SHEMA → SCHEMA)
+    for _typo, _correct in [("RENEWAL_SHEMA", "RENEWAL_SCHEMA"), ("RULES_SHEMA", "RULES_SCHEMA")]:
+        if _typo in os.environ and _correct not in os.environ:
+            os.environ[_correct] = os.environ[_typo]
+    # AMS_POLICY_HOST / AMS_RULE_HOST may reference OV_HOST alias
+    for _var in ("AMS_POLICY_HOST", "AMS_RULE_HOST"):
+        val = os.environ.get(_var, "")
+        if val in os.environ:
+            os.environ[_var] = os.environ[val]
     db.init_db()
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)

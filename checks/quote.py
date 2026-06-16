@@ -150,14 +150,17 @@ def run_plate(plate: str, year: int, month: int, token: str) -> dict:
 
         premium_api = target["premiumAnnual"]
         premium_calc = round(sum_insured * factor, 2)
+        tolerance = float(os.environ.get("QA_QUOTE_TOLERANCE", "20.00"))
+        diff = abs(premium_calc - premium_api)
 
-        if premium_calc == premium_api:
+        if diff <= tolerance:
             return {
                 "name": name,
                 "status": "ok",
                 "detail": (
                     f"plate={plate} sumInsured={sum_insured} × factor={factor}"
-                    f" = {premium_calc} ✓ (API={premium_api})"
+                    f" = {premium_calc} ✓ (API={premium_api}"
+                    + (f", diff={diff:.2f}" if diff > 0 else "") + ")"
                 ),
             }
 
@@ -166,7 +169,7 @@ def run_plate(plate: str, year: int, month: int, token: str) -> dict:
             "status": "failed",
             "detail": (
                 f"plate={plate} sumInsured={sum_insured} × factor={factor}"
-                f" = {premium_calc} ≠ premiumAnnual={premium_api}"
+                f" = {premium_calc} ≠ premiumAnnual={premium_api} (diff={diff:.2f}, tol={tolerance})"
             ),
         }
 

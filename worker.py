@@ -17,8 +17,12 @@ _active: dict = {}
 _active_lock = threading.Lock()
 
 
-def is_locked():
-    return not _lock.acquire(blocking=False)
+def is_locked() -> bool:
+    return _lock.locked()
+
+
+def acquire() -> bool:
+    return _lock.acquire(blocking=False)
 
 
 def release():

@@ -100,9 +100,29 @@ def test_quote_flow_ok(monkeypatch):
     assert "649.5" in result["detail"]
 
 
+def test_quote_flow_within_tolerance(monkeypatch):
+    _base_env(monkeypatch)
+    monkeypatch.setenv("QA_QUOTE_TOLERANCE", "2.00")
+    factor = 0.0219
+    # 29657.31 × 0.0219 = 649.50, API returns 650.75 → diff=1.25 <= 2.00
+
+    with patch("checks.quote.requests.post", side_effect=[
+             _mock_vehicle_data_resp(),
+             _mock_calculate_plans_resp(sum_insured=29657.31, premium_annual=650.75),
+         ]), \
+         patch("checks.db_conn.oracledb.connect", return_value=_mock_conn_factor(factor)):
+        from checks import quote
+        result = quote.run_plate("GTF2294", 2027, 7, "tok")
+
+    assert result["status"] == "ok"
+    assert "diff=1.25" in result["detail"]
+
+
 def test_quote_flow_mismatch(monkeypatch):
     _base_env(monkeypatch)
+    monkeypatch.setenv("QA_QUOTE_TOLERANCE", "2.00")
     factor = 0.0219
+    # 29657.31 × 0.0219 = 649.50, API returns 700.00 → diff=50.50 > 2.00
 
     with patch("checks.quote.requests.post", side_effect=[
              _mock_vehicle_data_resp(),
@@ -114,6 +134,7 @@ def test_quote_flow_mismatch(monkeypatch):
 
     assert result["status"] == "failed"
     assert "≠" in result["detail"]
+    assert "tol=2.0" in result["detail"]
 
 
 def test_quote_flow_no_factor(monkeypatch):
