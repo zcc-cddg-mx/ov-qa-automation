@@ -1,0 +1,95 @@
+{
+  "aux_branch": "",
+  "branch": "",
+  "checks": [
+    {
+      "detail": "migration recorded in ECU_POLICY.\"schema_history\"",
+      "name": "flyway_history",
+      "status": "ok"
+    },
+    {
+      "detail": "GET https://uat-oficinavirtual.zurichseguros.com.ec/nuevoportal/policy/api/v1/arizona/ecstructureelements/health → 200 OK",
+      "name": "endpoint_health",
+      "status": "ok"
+    },
+    {
+      "detail": "1589 rows found for 2026/07",
+      "name": "row_count",
+      "status": "ok"
+    },
+    {
+      "detail": "14 'No Renovar' rows found",
+      "name": "no_renovar_count",
+      "status": "ok"
+    },
+    {
+      "detail": "plate=PFJ2387 sumInsured=26190.0 × factor=0.027039 = 708.15 ✓ (API=707.13, diff=1.02)",
+      "name": "quote_flow:PFJ2387",
+      "status": "ok"
+    },
+    {
+      "detail": "plate=ABK7748 sumInsured=16490.0 × factor=0.032875 = 542.11 ✓ (API=542.52, diff=0.41)",
+      "name": "quote_flow:ABK7748",
+      "status": "ok"
+    },
+    {
+      "detail": "plate=GSK9258 sumInsured=10623.52 × factor=0.0487 = 517.37 ✓ (API=517.37)",
+      "name": "quote_flow:GSK9258",
+      "status": "ok"
+    },
+    {
+      "detail": "plate=PFJ2588 sumInsured=29637.41 × factor=0.0236 = 699.44 ✓ (API=699.44)",
+      "name": "quote_flow:PFJ2588",
+      "status": "ok"
+    },
+    {
+      "detail": "plate=PDS5963 sumInsured=15035.0 × factor=0.039494 = 593.79 ✓ (API=593.88, diff=0.09)",
+      "name": "quote_flow:PDS5963",
+      "status": "ok"
+    },
+    {
+      "detail": "plate=ABN7289 sumInsured=67053.19 × factor=0.022 = 1475.17 ✓ (API=1475.17)",
+      "name": "quote_flow:ABN7289",
+      "status": "ok"
+    },
+    {
+      "detail": "plate=WEW0000 sumInsured=52888.89 × factor=0.039942 = 2112.49 ✓ (API=2110.27, diff=2.22)",
+      "name": "quote_flow:WEW0000",
+      "status": "ok"
+    },
+    {
+      "detail": "plate=ABD7981 sumInsured=38953.26 × factor=0.03 = 1168.6 ✓ (API=1168.6)",
+      "name": "quote_flow:ABD7981",
+      "status": "ok"
+    },
+    {
+      "detail": "plate=MBF1743 sumInsured=27444.07 × factor=0.025 = 686.1 ✓ (API=686.1)",
+      "name": "quote_flow:MBF1743",
+      "status": "ok"
+    },
+    {
+      "detail": "plate=PDS4555 sumInsured=13737.14 × factor=0.0445 = 611.3 ✓ (API=611.3)",
+      "name": "quote_flow:PDS4555",
+      "status": "ok"
+    },
+    {
+      "detail": "10/10 quotable plates ok (min=1)",
+      "name": "quote_flow",
+      "status": "ok"
+    }
+  ],
+  "command": "ren-data",
+  "commit_id": "",
+  "created_at": "2026-06-16T20:35:12.111061+00:00",
+  "error": null,
+  "input_path": "/tmp/qa-data/uploads/968d0194_baseticketJulio2026 (2).xlsx",
+  "migration_name": "",
+  "module": "ams-policy",
+  "result": "approved",
+  "sample_size": 10,
+  "status": "done",
+  "summary": "All 15 checks passed",
+  "task_id": "1f87e04f",
+  "ticket": "INC23703493",
+  "updated_at": "2026-06-16T20:36:41.685286+00:00"
+}

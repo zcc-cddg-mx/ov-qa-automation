@@ -2,6 +2,8 @@ import os
 import time
 import requests
 
+from checks.summary import format_log, executive_summary
+
 _DELAYS = [2, 4, 8]
 
 
@@ -13,32 +15,42 @@ def send(task: dict, check_results: list, overall: str, summary: str,
         return
 
     if error:
-        payload = {
+        data = {
             "ticket":       task["ticket"],
             "status":       "error",
             "task_id":      task["task_id"],
             "error":        error,
             "completed_at": completed_at,
         }
+        files = None
     else:
-        payload = {
-            "ticket":         task["ticket"],
-            "status":         overall,
-            "task_id":        task["task_id"],
-            "command":        task["command"],
-            "module":         task["module"],
-            "migration_name": task["migration_name"],
-            "branch":         task["branch"],
-            "aux_branch":     task["aux_branch"],
-            "commit_id":      task["commit_id"],
-            "summary":        summary,
-            "checks":         check_results,
-            "completed_at":   completed_at,
+        log_text = format_log(task, check_results, overall, summary)
+        exec_summary = executive_summary(log_text, overall)
+
+        data = {
+            "ticket":            task["ticket"],
+            "status":            overall,
+            "task_id":           task["task_id"],
+            "command":           task["command"],
+            "module":            task.get("module", ""),
+            "migration_name":    task.get("migration_name", ""),
+            "summary":           summary,
+            "executive_summary": exec_summary,
+            "completed_at":      completed_at,
         }
+        files = {
+            "checks_log": (
+                f"checks_{task['task_id']}.txt",
+                log_text.encode("utf-8"),
+                "text/plain",
+            )
+        }
+        if exec_summary:
+            print(f"[SUMMARY] ejecutivo generado ({len(exec_summary)} chars)")
 
     for attempt, delay in enumerate(_DELAYS, start=1):
         try:
-            resp = requests.post(url, json=payload, timeout=10)
+            resp = requests.post(url, data=data, files=files, timeout=10)
             print(f"[N8N]    callback → {url} status={resp.status_code} (attempt {attempt})")
             if resp.status_code < 500:
                 return
