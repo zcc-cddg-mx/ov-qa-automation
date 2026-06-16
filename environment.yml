@@ -1,0 +1,38 @@
+# Conda environment for ov-qa-automation
+#
+# Channels:
+#   conda-forge  — community channel, primary source for Python and system libraries
+#                  https://conda.anaconda.org/conda-forge
+#   defaults     — Anaconda official channel (fallback)
+#                  https://repo.anaconda.com/pkgs/main
+#                  https://repo.anaconda.com/pkgs/r
+#
+# Python and system packages are resolved from conda-forge first, then defaults.
+# Application dependencies come from PyPI via pip.
+#
+# Create:   conda env create -f environment.yml
+# Update:   conda env update -f environment.yml --prune
+# Activate: conda activate ov-qa-agent
+
+name: ov-qa-agent
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.12
+  - pip
+
+  - pip:
+      # HTTP API listener — n8n calls QA Agent via HTTP
+      - flask==3.1.1
+
+      # HTTP checks against deployed services (endpoint_health)
+      - requests==2.32.3
+
+      # PostgreSQL driver — SQL checks against DEV database
+      - psycopg2-binary==2.9.10
+
+      # Testing
+      - pytest==9.0.3

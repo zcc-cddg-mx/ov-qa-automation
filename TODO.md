@@ -7,6 +7,7 @@ Plan completo: [architecture/execution_plan.md](architecture/execution_plan.md)
 ## Fase 1 — Scaffolding
 
 - [x] `requirements.txt`
+- [x] `environment.yml` (conda)
 - [x] `app.py` (Flask, arranca en `$PORT`)
 - [x] `docker-entrypoint.sh`
 - [x] `Dockerfile.base`
