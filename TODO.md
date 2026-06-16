@@ -39,10 +39,10 @@ Plan completo: [architecture/execution_plan.md](architecture/execution_plan.md)
 
 ## Fase 5 — Tests
 
-- [ ] `tests/test_api.py`
-- [ ] `tests/test_checks.py`
-- [ ] `tests/test_worker.py`
-- [ ] `tests/test_db.py`
+- [x] `tests/test_api.py`
+- [x] `tests/test_checks.py`
+- [x] `tests/test_worker.py`
+- [x] `tests/test_db.py`
 
 ## Fase 6 — Deploy
 
