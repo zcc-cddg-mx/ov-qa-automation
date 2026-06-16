@@ -17,13 +17,13 @@ Plan completo: [architecture/execution_plan.md](architecture/execution_plan.md)
 
 ## Fase 2 — API + persistencia
 
-- [ ] `db.py` — SQLite schema `qa_tasks`
-- [ ] `POST /validate` — validación de campos, lock, worker, 202
-- [ ] `GET /status/<task_id>`
-- [ ] `GET /tasks?limit=N`
-- [ ] `GET /health`
-- [ ] Rechazo con `active_task` si lock tomado
-- [ ] Worker stub (mock approved)
+- [x] `db.py` — SQLite schema `qa_tasks`
+- [x] `POST /validate` — validación de campos, lock, worker, 202
+- [x] `GET /status/<task_id>`
+- [x] `GET /tasks?limit=N`
+- [x] `GET /health`
+- [x] Rechazo con `active_task` si lock tomado
+- [x] Worker stub (mock approved)
 
 ## Fase 3 — Checks ⚠️ requiere env vars de backend
 
