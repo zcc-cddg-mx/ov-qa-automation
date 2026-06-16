@@ -26,6 +26,8 @@ def init_db():
                 commit_id      TEXT,
                 input_path     TEXT,
                 sample_size    INTEGER,
+                year           INTEGER,
+                month          INTEGER,
                 result         TEXT,
                 checks         TEXT,
                 summary        TEXT,
@@ -34,6 +36,12 @@ def init_db():
                 updated_at     TEXT NOT NULL
             )
         """)
+        # migrate existing databases that predate year/month columns
+        for col in ("year", "month"):
+            try:
+                conn.execute(f"ALTER TABLE qa_tasks ADD COLUMN {col} INTEGER")
+            except Exception:
+                pass
 
 
 def insert_task(task):
@@ -42,10 +50,12 @@ def insert_task(task):
             INSERT INTO qa_tasks
                 (task_id, ticket, status, command, module, migration_name,
                  branch, aux_branch, commit_id, input_path, sample_size,
+                 year, month,
                  result, checks, summary, error, created_at, updated_at)
             VALUES
                 (:task_id, :ticket, :status, :command, :module, :migration_name,
                  :branch, :aux_branch, :commit_id, :input_path, :sample_size,
+                 :year, :month,
                  :result, :checks, :summary, :error, :created_at, :updated_at)
         """, task)
 

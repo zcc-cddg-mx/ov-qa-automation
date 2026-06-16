@@ -72,15 +72,15 @@ def validate():
         "commit_id":      body.get("commit_id", ""),
         "input_path":     input_path,
         "sample_size":    sample_size,
+        "year":           int(body["year"]) if body.get("year") else None,
+        "month":          int(body["month"]) if body.get("month") else None,
         "result":         None,
         "checks":         json.dumps([]),
         "summary":        None,
         "error":          None,
         "created_at":     now,
         "updated_at":     now,
-        # worker-only fields — not stored in qa_tasks
-        "year":           int(body["year"]) if body.get("year") else None,
-        "month":          int(body["month"]) if body.get("month") else None,
+        # transient fields — not stored in qa_tasks
         "row_count":      int(body["row_count"]) if body.get("row_count") else None,
         "entity":         body.get("entity"),
         "callback_url":   body.get("callback_url"),
@@ -89,6 +89,7 @@ def validate():
     db.insert_task({k: task[k] for k in [
         "task_id", "ticket", "status", "command", "module", "migration_name",
         "branch", "aux_branch", "commit_id", "input_path", "sample_size",
+        "year", "month",
         "result", "checks", "summary", "error", "created_at", "updated_at"
     ]})
 

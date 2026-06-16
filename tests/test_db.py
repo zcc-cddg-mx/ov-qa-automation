@@ -16,6 +16,8 @@ def _task(task_id="t001"):
         "commit_id":      "abc123",
         "input_path":     None,
         "sample_size":    None,
+        "year":           None,
+        "month":          None,
         "result":         None,
         "checks":         json.dumps([]),
         "summary":        None,
