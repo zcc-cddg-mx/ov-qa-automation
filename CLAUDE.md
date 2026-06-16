@@ -44,39 +44,54 @@ Upon completion, the agent POSTs a callback to `callback_url` from the request (
 
 | Check | Command | Type | What it verifies |
 |---|---|---|---|
-| `flyway_history` | both | SQL | Migration recorded in `flyway_schema_history` with `success = TRUE` |
-| `endpoint_health` | both | HTTP | `GET /actuator/health` returns 200 with `"status": "UP"` (10s timeout) |
-| `row_count` | `ren-data` only | SQL | Row count matches `row_count` field from request (or > 0 if absent) |
-| `no_renovar_count` | `ren-data` only | SQL | At least 1 row with `renewal_blocked = 'Yes'` |
-| `entity_rows` | `rules` only | SQL | COUNT > 0 for the given `entity` and `migration_name` |
+| `flyway_history` | both | SQL | Migration recorded in `$FLYWAY_HISTORY_TABLE` with `success = TRUE` |
+| `endpoint_health` | both | HTTP | `GET http://<host>/$HEALTH_PATH` returns 200 with `"status": "UP"` (10s timeout) |
+| `row_count` | `ren-data` only | SQL | Row count in `$RENEWAL_TABLE` matches `row_count` from request (or > 0 if absent) |
+| `no_renovar_count` | `ren-data` only | SQL | At least 1 row with `$RENEWAL_BLOCKED_FIELD = 'Yes'` |
+| `entity_rows` | `rules` only | SQL | COUNT > 0 in `$RULES_TABLE` for given `entity` and `migration_name` |
 
 All checks run before resolving the global result — never abort on first failure. Global result is `approved` only if all checks pass; any failure → `rejected`.
 
-## Pending: SQL Table Names (Blocked)
-
-The following must be confirmed with the backend team before SQL checks can be implemented (see `architecture/qa_agent_contract.md §10`):
-
-1. Exact table name populated by Flyway from the `.xlsx` in `ams-policy`
-2. Column name equivalent to `migration_id` for filtering rows per migration
-3. Column name equivalent to `renewal_blocked` for "No Renovar" rows
-4. Table and columns for `rules` entity validation
-5. Whether Flyway history table is `flyway_schema_history` or `schema_version`
-6. DB credentials and access policy from SERVICIOSIAS to DEV DB
-7. Health endpoint path: `/actuator/health` or `/health`
+All table and field names are injected via env vars — the code has no hardcoded schema knowledge.
 
 ## Environment Variables
+
+**Connectivity**
 
 | Variable | Default | Description |
 |---|---|---|
 | `AMS_POLICY_HOST` | — | `host:port` for ams-policy DEV |
 | `AMS_RULE_HOST` | — | `host:port` for ams-rule DEV |
+| `HEALTH_PATH` | `/actuator/health` | Health endpoint path |
 | `DB_DSN` | — | `postgresql://user:pass@host:5432/db` |
 | `N8N_CALLBACK_URL` | — | Fallback webhook URL for n8n |
+
+**DB schema — `ren-data`**
+
+| Variable | Example | Description |
+|---|---|---|
+| `FLYWAY_HISTORY_TABLE` | `flyway_schema_history` | Flyway history table name |
+| `RENEWAL_TABLE` | `frd_fixed_renewal_data` | Table populated by the migration |
+| `RENEWAL_MIGRATION_ID_FIELD` | `migration_id` | Column linking rows to a migration |
+| `RENEWAL_BLOCKED_FIELD` | `renewal_blocked` | Column for "No Renovar" flag (`'Yes'`/`'No'`) |
+
+**DB schema — `rules`**
+
+| Variable | Example | Description |
+|---|---|---|
+| `RULES_TABLE` | `ams_rule_entry` | Table containing loaded rules |
+| `RULES_ENTITY_FIELD` | `entity` | Entity column in `RULES_TABLE` |
+| `RULES_MIGRATION_ID_FIELD` | `migration_id` | Column linking rows to a migration |
+
+**Operation**
+
+| Variable | Default | Description |
+|---|---|---|
 | `QA_TASKS_DB` | `/data/qa_tasks.db` | SQLite persistence path |
 | `RETENTION_DAYS` | `90` | SQLite record retention |
 | `PORT` | `5000` | HTTP server port |
 
-`DB_DSN` contains credentials — inject via Docker env only, never commit.
+`DB_DSN` contains credentials — inject via Docker env only, never commit. Example `docker run` with all vars in `architecture/qa_agent_contract.md §10`.
 
 ## Log Format Convention
 
