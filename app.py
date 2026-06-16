@@ -14,6 +14,7 @@ REQUIRED_FIELDS = ["ticket", "command", "module", "migration_name",
                    "branch", "aux_branch", "commit_id"]
 REQUIRED_REN_DATA = ["year", "month"]
 REQUIRED_RULES = ["entity"]
+MAX_PLATES = 50
 
 
 def _now():
@@ -32,6 +33,13 @@ def validate():
     if missing:
         return jsonify({"status": "error",
                         "error": f"Missing required field(s): {', '.join(missing)}"}), 400
+
+    plates = body.get("plates") or []
+    if not isinstance(plates, list) or any(not isinstance(p, str) for p in plates):
+        return jsonify({"status": "error", "error": "'plates' must be a list of strings"}), 400
+    if len(plates) > MAX_PLATES:
+        return jsonify({"status": "error",
+                        "error": f"'plates' exceeds maximum of {MAX_PLATES}"}), 400
 
     if worker.is_locked():
         active = worker.get_active()
@@ -61,6 +69,7 @@ def validate():
         "month":          body.get("month"),
         "row_count":      body.get("row_count"),
         "entity":         body.get("entity"),
+        "plates":         plates,
         "callback_url":   body.get("callback_url"),
     }
 

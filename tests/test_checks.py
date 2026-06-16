@@ -80,7 +80,7 @@ def test_health_ok(monkeypatch):
     mock_health_resp.content = b'{"status":"UP"}'
     mock_health_resp.json.return_value = {"status": "UP"}
 
-    with patch("checks.health.requests.post", return_value=_mock_login_resp()), \
+    with patch("checks.auth.requests.post", return_value=_mock_login_resp()), \
          patch("checks.health.requests.get", return_value=mock_health_resp):
         from checks import health
         result = health.run("ams-policy")
@@ -102,7 +102,7 @@ def test_health_non_200(monkeypatch):
     mock_health_resp.content = b'{"status":"DOWN"}'
     mock_health_resp.json.return_value = {"status": "DOWN"}
 
-    with patch("checks.health.requests.post", return_value=_mock_login_resp()), \
+    with patch("checks.auth.requests.post", return_value=_mock_login_resp()), \
          patch("checks.health.requests.get", return_value=mock_health_resp):
         from checks import health
         result = health.run("ams-policy")
@@ -119,7 +119,7 @@ def test_health_timeout(monkeypatch):
     monkeypatch.setenv("AUTH_PASSWORD", "p")
     monkeypatch.setenv("AUTH_TENANT", "ec")
 
-    with patch("checks.health.requests.post", return_value=_mock_login_resp()), \
+    with patch("checks.auth.requests.post", return_value=_mock_login_resp()), \
          patch("checks.health.requests.get", side_effect=req.Timeout):
         from checks import health
         result = health.run("ams-rule")

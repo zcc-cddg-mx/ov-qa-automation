@@ -8,6 +8,7 @@ import checks.flyway as flyway
 import checks.health as health
 import checks.renewal as renewal
 import checks.rules as rules
+import checks.quote as quote
 
 _lock = threading.Lock()
 _active: dict = {}
@@ -81,6 +82,13 @@ def _execute(task):
             result = renewal.run_no_renovar_count(task["year"], task["month"])
             check_results.append(result)
             print(f"[CHECK]  no_renovar_count — {result['status']} ({result['detail']})")
+
+            plates = task.get("plates") or []
+            if plates:
+                quote_results = quote.run(plates, task["year"], task["month"])
+                for qr in quote_results:
+                    check_results.append(qr)
+                    print(f"[CHECK]  quote_flow — {qr['status']} ({qr['detail']})")
 
         elif command == "rules":
             result = rules.run_entity_rows(task["entity"], migration_name)
