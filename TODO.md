@@ -52,6 +52,11 @@ Plan completo: [architecture/execution_plan.md](architecture/execution_plan.md)
 - [x] `endpoint_health` — login JWT → `body.accessToken` → GET con Bearer token
 - [x] 43 tests pasando (mocks actualizados para Oracle + JWT)
 
+## Fase 5.1 — Verificacion via endpoints
+
+- [ ] Entendimiento de un flujo de cotizacion
+- [ ] Recibir listado de placas a validar
+
 ## Fase 6 — Deploy
 
 - [ ] Build `qa-agent-base` y `ov-qa-agent`

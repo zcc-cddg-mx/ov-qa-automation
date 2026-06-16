@@ -2,6 +2,10 @@
 .vscode
 .claude
 
+# test artifacts with real credentials / tokens — never commit
+tests/apis/
+tests/sql/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
