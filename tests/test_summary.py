@@ -31,10 +31,10 @@ def test_group_checks():
     assert groups["business_rules"] == "ok"
 
 
-def test_executive_summary_no_credentials(monkeypatch):
+def test_executive_summary_no_credentials_rejected(monkeypatch):
     monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    result = executive_summary("log", "approved", TASK, CHECKS)
+    result = executive_summary("log", "rejected", TASK, CHECKS)
     assert result == ""
 
 
@@ -71,3 +71,22 @@ def test_executive_summary_anthropic_error_fallback(monkeypatch):
         result = executive_summary("log", "approved", TASK, CHECKS)
 
     assert result == "Fallback summary."
+
+
+def test_executive_summary_static_fallback_approved(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("QA_ENVIRONMENT", "UAT")
+    result = executive_summary("log", "approved", TASK, CHECKS)
+    from datetime import datetime
+    now = datetime.now()
+    assert str(now.year) in result
+    assert TASK["ticket"] in result
+    assert TASK["module"] in result
+
+
+def test_executive_summary_static_fallback_not_used_on_rejected(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    result = executive_summary("log", "rejected", TASK, CHECKS)
+    assert result == ""

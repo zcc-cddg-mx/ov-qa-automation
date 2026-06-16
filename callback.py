@@ -46,9 +46,6 @@ def send(task: dict, check_results: list, overall: str, summary: str,
                 "text/plain",
             )
         }
-        if exec_summary:
-            print(f"[SUMMARY] ejecutivo generado ({len(exec_summary)} chars)")
-
     for attempt, delay in enumerate(_DELAYS, start=1):
         try:
             resp = requests.post(url, data=data, files=files, timeout=10)

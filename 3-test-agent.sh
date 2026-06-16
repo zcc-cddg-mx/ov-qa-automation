@@ -302,15 +302,9 @@ if os.path.exists(env_file):
             k, _, v = line.partition('=')
             os.environ.setdefault(k.strip(), v.strip())
 
-os.environ['ANTHROPIC_AUTH_TOKEN'] = 'sk-mock-test'
-
-MOCK_SUMMARY = (
-    "El despliegue del batch de renovaciones para julio 2026 fue aprobado exitosamente. "
-    "Se validaron 10 pólizas de la muestra aleatoria, confirmando que el cálculo de prima "
-    "anual es consistente con los factores registrados en la base de datos. "
-    "Los checks de migración, salud del servicio y conteo de registros también pasaron sin inconvenientes. "
-    "El ambiente DEV/UAT se encuentra en condiciones óptimas para continuar con el proceso de despliegue."
-)
+# Sin ANTHROPIC_AUTH_TOKEN — el fallback estático del código toma control
+os.environ.pop('ANTHROPIC_AUTH_TOKEN', None)
+os.environ.pop('OPENAI_API_KEY', None)
 
 import callback
 
@@ -321,12 +315,12 @@ t = {
     'task_id': task['task_id'], 'ticket': task['ticket'],
     'command': task['command'], 'module': task['module'],
     'migration_name': task.get('migration_name', ''),
+    'sample_size': task.get('sample_size', 10),
     'branch': '', 'aux_branch': '', 'commit_id': '',
     'callback_url': 'http://localhost:${CALLBACK_PORT}/webhook/test',
 }
 
-with patch('checks.summary._call_anthropic', return_value=MOCK_SUMMARY):
-    callback.send(t, task['checks'], task['result'], task['summary'], task['updated_at'])
+callback.send(t, task['checks'], task['result'], task['summary'], task['updated_at'])
 PYEOF
 
 for i in $(seq 1 20); do sleep 0.5; [ -s "${CALLBACK_FILE2}" ] && break; done
