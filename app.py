@@ -11,6 +11,25 @@ import worker
 
 app = Flask(__name__)
 
+# normalize env — runs at import time (works under Docker/gunicorn)
+# 1. legacy typos SHEMA → SCHEMA
+for _typo, _correct in [("RENEWAL_SHEMA", "RENEWAL_SCHEMA"), ("RULES_SHEMA", "RULES_SCHEMA")]:
+    if _typo in os.environ and _correct not in os.environ:
+        os.environ[_correct] = os.environ[_typo]
+# 2. host aliases (AMS_POLICY_HOST=OV_HOST → resolve value)
+for _var in ("AMS_POLICY_HOST", "AMS_RULE_HOST"):
+    _val = os.environ.get(_var, "")
+    if _val in os.environ:
+        os.environ[_var] = os.environ[_val]
+# 3. strip stray quotes from table/schema names set in .env
+for _var in ("FLYWAY_HISTORY_TABLE", "RENEWAL_TABLE", "RENEWAL_SCHEMA", "RULES_TABLE",
+             "RULES_SCHEMA", "RENEWAL_BLOCKED_FIELD", "RENEWAL_MIGRATION_ID_FIELD",
+             "RENEWAL_PLATE_FIELD", "RULES_ENTITY_FIELD", "RULES_MIGRATION_ID_FIELD"):
+    if _var in os.environ:
+        os.environ[_var] = os.environ[_var].strip('"').strip("'")
+
+db.init_db()
+
 REQUIRED_FIELDS = ["ticket", "command"]
 REQUIRED_REN_DATA = ["year", "month"]
 REQUIRED_RULES = ["module", "migration_name", "entity"]
@@ -120,15 +139,6 @@ def health():
 
 
 if __name__ == "__main__":
-    # normalize legacy env typos from .env (SHEMA → SCHEMA)
-    for _typo, _correct in [("RENEWAL_SHEMA", "RENEWAL_SCHEMA"), ("RULES_SHEMA", "RULES_SCHEMA")]:
-        if _typo in os.environ and _correct not in os.environ:
-            os.environ[_correct] = os.environ[_typo]
-    # AMS_POLICY_HOST / AMS_RULE_HOST may reference OV_HOST alias
-    for _var in ("AMS_POLICY_HOST", "AMS_RULE_HOST"):
-        val = os.environ.get(_var, "")
-        if val in os.environ:
-            os.environ[_var] = os.environ[val]
     db.init_db()
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
