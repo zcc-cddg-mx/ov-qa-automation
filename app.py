@@ -12,11 +12,7 @@ import worker
 app = Flask(__name__)
 
 # normalize env — runs at import time (works under Docker/gunicorn)
-# 1. legacy typos SHEMA → SCHEMA
-for _typo, _correct in [("RENEWAL_SHEMA", "RENEWAL_SCHEMA"), ("RULES_SHEMA", "RULES_SCHEMA")]:
-    if _typo in os.environ and _correct not in os.environ:
-        os.environ[_correct] = os.environ[_typo]
-# 2. host aliases (AMS_POLICY_HOST=OV_HOST → resolve value)
+# 1. host aliases (AMS_POLICY_HOST=OV_HOST → resolve value)
 for _var in ("AMS_POLICY_HOST", "AMS_RULE_HOST"):
     _val = os.environ.get(_var, "")
     if _val in os.environ:
