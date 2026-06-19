@@ -5,6 +5,7 @@ import requests
 from checks.summary import format_log, executive_summary
 
 _DELAYS = [2, 4, 8]
+_VERIFY_SSL = os.environ.get("CALLBACK_VERIFY_SSL", "true").lower() != "false"
 
 
 def send(task: dict, check_results: list, overall: str, summary: str,
@@ -48,7 +49,7 @@ def send(task: dict, check_results: list, overall: str, summary: str,
         }
     for attempt, delay in enumerate(_DELAYS, start=1):
         try:
-            resp = requests.post(url, data=data, files=files, timeout=10)
+            resp = requests.post(url, data=data, files=files, timeout=10, verify=_VERIFY_SSL)
             print(f"[N8N]    callback → {url} status={resp.status_code} (attempt {attempt})")
             if resp.status_code < 500:
                 return
