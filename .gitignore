@@ -1,6 +1,7 @@
 # user
 .vscode
 .claude
+logs/
 
 # test artifacts with real credentials / tokens — never commit
 tests/apis/
