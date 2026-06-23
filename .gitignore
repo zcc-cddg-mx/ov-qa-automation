@@ -6,6 +6,7 @@ logs/
 # test artifacts with real credentials / tokens — never commit
 tests/apis/
 tests/sql/
+tests/data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
